@@ -1,0 +1,32 @@
+{
+    "name": "erickmenezes/laravel-query-augment",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "ErickJMenezes\\LQA\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "ErickJMenezes",
+            "email": "erickmenezes.dev@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^8.2",
+        "illuminate/database": "^10.11",
+        "nikic/php-parser": "^4.15"
+    },
+    "require-dev": {
+        "pestphp/pest": "^2.6",
+        "vimeo/psalm": "^5.11",
+        "psalm/plugin-laravel": "^2.8"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
