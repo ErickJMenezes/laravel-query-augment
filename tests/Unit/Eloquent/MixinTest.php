@@ -14,6 +14,10 @@ it('works!', function () {
         ->addSelectCase(function ($testing) {
             if ($testing->text == 'foo') {
                 return 'yay!';
+            } elseif ($testing->text == 'bar' || $testing->text == 'baz') {
+                return 'error!';
+            } else {
+                return 'another error!';
             }
         }, 'value')
         ->first();
