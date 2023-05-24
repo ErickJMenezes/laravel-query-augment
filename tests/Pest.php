@@ -11,7 +11,12 @@
 |
 */
 
-// uses(Tests\TestCase::class)->in('Feature');
+use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
+
+uses(Tests\TestCase::class)->in('Unit', 'Feature');
+
+beforeAll(fn() => app('db')->table('testing')->delete());
 
 /*
 |--------------------------------------------------------------------------
@@ -38,8 +43,3 @@ expect()->extend('toBeOne', function () {
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
-
-function something()
-{
-    // ..
-}
