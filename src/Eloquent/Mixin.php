@@ -25,7 +25,9 @@ class Mixin
             if (count($stmts) === 0 || !($stmts[0] instanceof If_)) {
                 throw new \InvalidArgumentException('The method Builder::addSelectCase() expects a closure with a if/elseif/else statement(s).');
             }
-            return $this->addSelect(new CaseExpression($stmts[0], $as));
+            $column = new CaseExpression($stmts[0], $as);
+            $this->addBinding($column->bindings, 'select');
+            return $this->addSelect($column);
         };
     }
 }

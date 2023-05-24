@@ -2,15 +2,18 @@
 
 namespace ErickJMenezes\LaravelQueryAugment\Expressions;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Grammar;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\Grammars\MySqlGrammar;
 use Illuminate\Database\Query\Grammars\SQLiteGrammar;
+use Illuminate\Support\Facades\DB;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\BinaryOp;
 use PhpParser\Node\Scalar;
 use PhpParser\Node\Stmt;
 use PhpParser\NodeAbstract;
+use PhpParser\PrettyPrinter\Standard as PhpCodePrinter;
 
 /**
  * Class CaseExpression.
@@ -21,6 +24,8 @@ class CaseExpression extends Expression
 {
     private Grammar $grammar;
 
+    public array $bindings = [];
+
     private const ALLOWED_NODES = [
         Stmt\If_::class,
         Stmt\ElseIf_::class,
@@ -29,6 +34,8 @@ class CaseExpression extends Expression
         //
         Expr\PropertyFetch::class,
         Expr\Variable::class,
+        Expr\StaticCall::class,
+        Expr\MethodCall::class,
         //
         BinaryOp\Identical::class,
         BinaryOp\Equal::class,
@@ -59,7 +66,7 @@ class CaseExpression extends Expression
     {
         assert(
             in_array($node::class, self::ALLOWED_NODES),
-            "Invalid code found inside closure at line {$node->getLine()}:{$node->getStartTokenPos()}. Please, review the correct syntax.",
+            "Invalid code found inside closure at line {$node->getLine()}. Please, review the correct syntax.",
         );
 
         if ($node instanceof BinaryOp) {
@@ -81,6 +88,17 @@ class CaseExpression extends Expression
             $this->validate($node->expr);
         } elseif ($node instanceof Expr\PropertyFetch) {
             $this->validate($node->var);
+        }
+    }
+
+    private function getMethodCallClass(Expr\MethodCall|Expr\StaticCall|Expr $call): string
+    {
+        if ($call instanceof Expr\StaticCall) {
+            return $call->class->toCodeString();
+        } elseif ($call instanceof Expr\MethodCall) {
+            return $this->getMethodCallClass($call->var);
+        } else {
+            assert(false, "Invalid expression at line {$call->getLine()}. You should return a column or a subquery.");
         }
     }
 
@@ -112,7 +130,10 @@ class CaseExpression extends Expression
                     $compiled[] = $this->compileNode($elseIf);
                 }
 
-                $compiled[] = $this->compileNode($node->else);
+                if ($node->else) {
+                    // compile else statement body
+                    $compiled[] = $this->compileNode($node->else);
+                }
 
                 $compiled[] = 'end)';
                 return implode(' ', $compiled);
@@ -154,9 +175,24 @@ class CaseExpression extends Expression
             {
                 return "({$this->compileNode($node->left)} {$this->getOperatorSigil($node)} {$this->compileNode($node->right)})";
             }
+            case Expr\StaticCall::class:
+            case Expr\MethodCall::class:
+            {
+                $class = $this->getMethodCallClass($node);
+                assert(
+                    is_a($class, DB::class, true)
+                    || is_a($class, Model::class, true),
+                    "Invalid sub query at line {$node->getLine()}."
+                );
+                $code = 'return ' . (new PhpCodePrinter)->prettyPrintExpr($node) . ';';
+                /** @var \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder $query */
+                $query = eval($code);
+                array_push($this->bindings, ...$query->getBindings());
+                return "({$query->toSql()})";
+            }
             default:
             {
-                throw new \UnexpectedValueException("Unexpetec node {$node->getType()}");
+                throw new \UnexpectedValueException("Unexpected code at line {$node->getType()}");
             }
         }
     }
