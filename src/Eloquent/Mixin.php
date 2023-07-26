@@ -23,7 +23,7 @@ class Mixin
             $reflectionClosure = new ReflectionClosure($conditionBuilder);
             $stmts = $reflectionClosure->ast()->stmts;
             if (count($stmts) === 0 || !($stmts[0] instanceof If_)) {
-                throw new \InvalidArgumentException('The method Builder::addSelectCase() expects a closure with a if/elseif/else statement(s).');
+                throw new \InvalidArgumentException('The method Builder::addSelectCase() expects a closure with at least one if statement inside.');
             }
             $column = new CaseExpression($stmts[0], $as);
             $this->addBinding($column->bindings, 'select');
