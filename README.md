@@ -25,7 +25,7 @@ $item->value; // 'yay!'
 ```
 
 ## How is this witchcraft working?
-You probably noticed the `addSelectCase` method in the example above. Actually, this method is not invoked. The package compiles the source code inside the closure into a MySQL `CASE` statement. It sounds crazy, but it works!
+You probably noticed the `addSelectCase` method in the example above. Actually, the closure passed to `addSelectCase` method is not invoked. The package compiles the source code inside the closure into a MySQL `CASE` statement. It sounds crazy, but it works!
 
 The transpiled code looks something like:
 
